@@ -427,35 +427,47 @@ class AStarFoodSearchAgent(SearchAgent):
 
 def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
-    Your heuristic for the FoodSearchProblem goes here.
+    Admissible and consistent heuristic for FoodSearchProblem.
 
-    This heuristic must be consistent to ensure correctness.  First, try to come
-    up with an admissible heuristic; almost all admissible heuristics will be
-    consistent as well.
+    For each remaining food dot, the maze distance from the current position
+    to that food dot is a lower bound on the cost to finish (since Pacman must
+    reach every remaining food dot). Taking the maximum over all remaining
+    food dots is both admissible and consistent by the triangle inequality:
+      h(pos, food) = max_{f in food} mazeDistance(pos, f)
 
-    If using A* ever finds a solution that is worse uniform cost search finds,
-    your heuristic is *not* consistent, and probably not admissible!  On the
-    other hand, inadmissible or inconsistent heuristics may find optimal
-    solutions, so be careful.
-
-    The state is a tuple ( pacmanPosition, foodGrid ) where foodGrid is a Grid
-    (see game.py) of either True or False. You can call foodGrid.asList() to get
-    a list of food coordinates instead.
-
-    If you want access to info like walls, capsules, etc., you can query the
-    problem.  For example, problem.walls gives you a Grid of where the walls
-    are.
-
-    If you want to *store* information to be reused in other calls to the
-    heuristic, there is a dictionary called problem.heuristicInfo that you can
-    use. For example, if you only want to count the walls once and store that
-    value, try: problem.heuristicInfo['wallCount'] = problem.walls.count()
-    Subsequent calls to this heuristic can access
-    problem.heuristicInfo['wallCount']
+    We precompute/cache BFS distance maps from each food dot on demand in
+    problem.heuristicInfo so distance lookups are O(1).
     """
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+    food = foodGrid.asList()
+
+    if not food:
+        return 0
+
+    if 'distCache' not in problem.heuristicInfo:
+        problem.heuristicInfo['distCache'] = {}
+
+    cache = problem.heuristicInfo['distCache']
+    walls = problem.walls
+
+    from collections import deque
+
+    for f in food:
+        if f not in cache:
+            dist_map = {f: 0}
+            queue = deque([f])
+            while queue:
+                curr = queue.popleft()
+                d = dist_map[curr]
+                x, y = curr
+                for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+                    nx, ny = x + dx, y + dy
+                    if not walls[nx][ny] and (nx, ny) not in dist_map:
+                        dist_map[(nx, ny)] = d + 1
+                        queue.append((nx, ny))
+            cache[f] = dist_map
+
+    return max(cache[f][position] for f in food)
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
