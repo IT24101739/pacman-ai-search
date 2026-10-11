@@ -96,9 +96,35 @@ def breadthFirstSearch(problem: SearchProblem):
 
 def uniformCostSearch(problem: SearchProblem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    start = problem.getStartState()
 
+    frontier = util.PriorityQueue()
+    frontier.push((start, [], 0), 0)
+
+    explored = set()
+
+    while not frontier.isEmpty():
+        state, actions, cost = frontier.pop()
+
+        if state in explored:
+            continue
+
+        explored.add(state)
+
+        if problem.isGoalState(state):
+            return actions
+
+        for successor, action, stepCost in problem.getSuccessors(state):
+            if successor not in explored:
+                newCost = cost + stepCost
+                newActions = actions + [action]
+                frontier.push(
+                    (successor, newActions, newCost),
+                    newCost
+                )
+
+    return []
+    
 def nullHeuristic(state, problem=None):
     """
     A heuristic function estimates the cost from the current state to the nearest
@@ -108,8 +134,41 @@ def nullHeuristic(state, problem=None):
 
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    start = problem.getStartState()
+
+    frontier = util.PriorityQueue()
+    startCost = 0
+    frontier.push(
+        (start, [], startCost),
+        startCost + heuristic(start, problem)
+    )
+
+    explored = set()
+
+    while not frontier.isEmpty():
+        state, actions, cost = frontier.pop()
+
+        if state in explored:
+            continue
+
+        explored.add(state)
+
+        if problem.isGoalState(state):
+            return actions
+
+        for successor, action, stepCost in problem.getSuccessors(state):
+            if successor not in explored:
+                newCost = cost + stepCost
+                newActions = actions + [action]
+                priority = newCost + heuristic(successor, problem)
+
+                frontier.push(
+                    (successor, newActions, newCost),
+                    priority
+                )
+
+    return []
+    
 
 
 # Abbreviations
