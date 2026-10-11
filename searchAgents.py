@@ -273,62 +273,63 @@ def euclideanHeuristic(position, problem, info={}):
 class CornersProblem(search.SearchProblem):
     """
     This search problem finds paths through all four corners of a layout.
-
+    
     You must select a suitable state space and successor function
     """
-
+    
     def __init__(self, startingGameState: pacman.GameState):
-        """
-        Stores the walls, pacman's starting position and corners.
-        """
-        self.walls = startingGameState.getWalls()
-        self.startingPosition = startingGameState.getPacmanPosition()
-        top, right = self.walls.height-2, self.walls.width-2
-        self.corners = ((1,1), (1,top), (right, 1), (right, top))
-        for corner in self.corners:
-            if not startingGameState.hasFood(*corner):
-                print('Warning: no food in corner ' + str(corner))
-        self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
-
+    """
+    Stores the walls, pacman's starting position and corners.
+    """
+    self.walls = startingGameState.getWalls()
+    self.startingPosition = startingGameState.getPacmanPosition()
+    top, right = self.walls.height-2, self.walls.width-2
+    self.corners = ((1,1), (1,top), (right, 1), (right, top))
+    for corner in self.corners:
+    if not startingGameState.hasFood(*corner):
+    print('Warning: no food in corner ' + str(corner))
+    self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
+    
     def getStartState(self):
-        """
-        Returns the start state (in your state space, not the full Pacman state
-        space)
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
-    def isGoalState(self, state: Any):
-        """
-        Returns whether this search state is a goal state of the problem.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
-    def getSuccessors(self, state: Any):
-        """
-        Returns successor states, the actions they require, and a cost of 1.
-
-         As noted in search.py:
-            For a given state, this should return a list of triples, (successor,
-            action, stepCost), where 'successor' is a successor to the current
-            state, 'action' is the action required to get there, and 'stepCost'
-            is the incremental cost of expanding to that successor
-        """
-
-        successors = []
-        for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
-            # Add a successor state to the successor list if the action is legal
-            # Here's a code snippet for figuring out whether a new position hits a wall:
-            #   x,y = currentPosition
-            #   dx, dy = Actions.directionToVector(action)
-            #   nextx, nexty = int(x + dx), int(y + dy)
-            #   hitsWall = self.walls[nextx][nexty]
-
-            "*** YOUR CODE HERE ***"
-
-        self._expanded += 1 # DO NOT CHANGE
-        return successors
+    """Return Pacman's position and the corners visited so far."""
+    visitedCorners = []
+    if self.startingPosition in self.corners:
+    visitedCorners.append(self.startingPosition)
+    return (self.startingPosition, tuple(sorted(visitedCorners)))
+    
+    def isGoalState(self, state):
+    """The goal is reached after visiting all four corners."""
+    position, visitedCorners = state
+    return len(visitedCorners) == 4
+    
+    def getSuccessors(self, state):
+    """Generate legal successor states and update visited corners."""
+    successors = []
+    position, visitedCorners = state
+    x, y = position
+    
+    for action in [
+    Directions.NORTH,
+    Directions.SOUTH,
+    Directions.EAST,
+    Directions.WEST
+    ]:
+    dx, dy = Actions.directionToVector(action)
+    nextx = int(x + dx)
+    nexty = int(y + dy)
+    
+    if not self.walls[nextx][nexty]:
+    nextPosition = (nextx, nexty)
+    nextVisited = list(visitedCorners)
+    
+    if nextPosition in self.corners and nextPosition not in nextVisited:
+    nextVisited.append(nextPosition)
+    
+    nextState = (nextPosition, tuple(sorted(nextVisited)))
+    successors.append((nextState, action, 1))
+    
+    self._expanded += 1
+    return successors
 
     def getCostOfActions(self, actions):
         """
